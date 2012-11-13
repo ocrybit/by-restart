@@ -1,0 +1,24 @@
+{
+  "name": "by-restart",
+  "version": "0.0.1",
+  "description": "A node module.",
+  "keywords": [],
+  "bugs": {
+    "url": "https://github.com/undefined/by-restart/issues"
+  },
+  "main": "./lib/by-restart",
+  "directories": {
+    "lib": "./lib",
+    "doc": "./docs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/undefined/by-restart"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "coffee-script": "",
+    "mocha": "",
+    "chai": ""
+  }
+}

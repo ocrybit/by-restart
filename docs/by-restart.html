@@ -1,0 +1,58 @@
+<!DOCTYPE html>  <html> <head>   <title>by-restart.coffee</title>   <meta http-equiv="content-type" content="text/html; charset=UTF-8">   <link rel="stylesheet" media="all" href="docco.css" /> </head> <body>   <div id="container">     <div id="background"></div>          <table cellpadding="0" cellspacing="0">       <thead>         <tr>           <th class="docs">             <h1>               by-restart.coffee             </h1>           </th>           <th class="code">           </th>         </tr>       </thead>       <tbody>                               <tr id="section-1">             <td class="docs">               <div class="pilwrap">                 <a class="pilcrow" href="#section-1">&#182;</a>               </div>                            </td>             <td class="code">               <div class="highlight"><pre><span class="nv">fs = </span><span class="nx">require</span><span class="p">(</span><span class="s">&#39;fs&#39;</span><span class="p">)</span>
+<span class="nv">EventEmitter = </span><span class="nx">require</span><span class="p">(</span><span class="s">&#39;events&#39;</span><span class="p">).</span><span class="nx">EventEmitter</span>
+<span class="nv">path = </span><span class="nx">require</span><span class="p">(</span><span class="s">&#39;path&#39;</span><span class="p">)</span>
+<span class="nv">util = </span><span class="nx">require</span><span class="p">(</span><span class="s">&#39;util&#39;</span><span class="p">)</span>
+<span class="nv">_ = </span><span class="nx">require</span><span class="p">(</span><span class="s">&#39;underscore&#39;</span><span class="p">)</span>
+<span class="nv">minimatch = </span><span class="nx">require</span><span class="p">(</span><span class="s">&#39;minimatch&#39;</span><span class="p">)</span>
+<span class="nv">path = </span><span class="nx">require</span><span class="p">(</span><span class="s">&#39;path&#39;</span><span class="p">)</span>
+<span class="nv">cp = </span><span class="nx">require</span><span class="p">(</span><span class="s">&#39;child_process&#39;</span><span class="p">)</span>
+<span class="nv">spawn = </span><span class="nx">cp</span><span class="p">.</span><span class="nx">spawn</span>
+<span class="nv">module.exports = </span><span class="k">class</span> <span class="nx">ByRestart</span> <span class="k">extends</span> <span class="nx">EventEmitter</span>
+
+  <span class="nv">constructor: </span><span class="nf">(@opts = {}) -&gt;</span>
+    <span class="vi">@coffee = </span><span class="nx">@opts</span><span class="o">?</span><span class="p">.</span><span class="nx">coffee</span> <span class="o">?</span> <span class="kc">false</span>
+    <span class="vi">@command = </span><span class="nx">@opts</span><span class="o">?</span><span class="p">.</span><span class="nx">command</span>
+    <span class="vi">@options = </span><span class="nx">@opts</span><span class="o">?</span><span class="p">.</span><span class="nx">options</span> <span class="o">?</span> <span class="p">[]</span>
+    <span class="vi">@ignoreFiles = </span><span class="p">[]</span>
+
+    <span class="k">if</span> <span class="nx">@opts</span><span class="o">?</span><span class="p">.</span><span class="nx">ignoreFiles</span><span class="o">?</span>
+      <span class="nx">@_setIgnoreFiles</span><span class="p">(</span><span class="nx">@opts</span><span class="p">.</span><span class="nx">ignoreFiles</span><span class="p">)</span>
+
+  <span class="nv">_setListeners: </span><span class="nf">(@bystander) -&gt;</span>
+    <span class="nx">@bystander</span><span class="p">.</span><span class="kc">on</span><span class="p">(</span><span class="s">&#39;File changed&#39;</span><span class="p">,</span> <span class="p">(</span><span class="nx">file</span><span class="p">)</span> <span class="o">=&gt;</span>
+      <span class="nv">extname = </span><span class="nx">path</span><span class="p">.</span><span class="nx">extname</span><span class="p">(</span><span class="nx">file</span><span class="p">)</span>
+      <span class="k">if</span> <span class="p">(</span><span class="nx">@coffee</span> <span class="o">and</span> <span class="nx">extname</span> <span class="o">is</span> <span class="s">&#39;.coffee&#39;</span><span class="p">)</span> <span class="o">or</span> <span class="p">(</span><span class="o">not</span> <span class="nx">@coffee</span> <span class="o">and</span> <span class="nx">extname</span> <span class="o">is</span> <span class="s">&#39;.js&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="o">not</span> <span class="nx">@_isIgnore</span><span class="p">(</span><span class="nx">file</span><span class="p">)</span>
+          <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">file</span> <span class="o">+</span> <span class="s">&#39; changed, restarting the server...&#39;</span><span class="p">)</span>
+          <span class="nx">@ps</span><span class="p">.</span><span class="nx">kill</span><span class="p">()</span>
+          <span class="nx">@_run</span><span class="p">()</span>
+    <span class="p">)</span>
+  <span class="nv">_init: </span><span class="nf">(callback) -&gt;</span>
+    <span class="nx">@_run</span><span class="p">(</span><span class="nx">callback</span><span class="p">)</span>
+
+  <span class="nv">_run : </span><span class="nf">(callback) -&gt;</span>
+    <span class="vi">@ps = </span><span class="nx">spawn</span><span class="p">(</span><span class="nx">@command</span><span class="p">,</span><span class="nx">@options</span><span class="p">)</span>
+    <span class="nx">@ps</span><span class="p">.</span><span class="nx">stdout</span><span class="p">.</span><span class="nx">setEncoding</span><span class="p">(</span><span class="s">&#39;utf8&#39;</span><span class="p">)</span>
+    <span class="nx">@ps</span><span class="p">.</span><span class="nx">stderr</span><span class="p">.</span><span class="nx">setEncoding</span><span class="p">(</span><span class="s">&#39;utf8&#39;</span><span class="p">)</span>
+    <span class="nx">@ps</span><span class="p">.</span><span class="nx">stdout</span><span class="p">.</span><span class="kc">on</span><span class="p">(</span><span class="s">&#39;data&#39;</span><span class="p">,(</span><span class="nx">data</span><span class="p">)</span><span class="o">=&gt;</span>
+      <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">data</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="nx">@ps</span><span class="p">.</span><span class="nx">stderr</span><span class="p">.</span><span class="kc">on</span><span class="p">(</span><span class="s">&#39;data&#39;</span><span class="p">,(</span><span class="nx">data</span><span class="p">)</span><span class="o">=&gt;</span>
+      <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">data</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="nx">@ps</span><span class="p">.</span><span class="kc">on</span><span class="p">(</span><span class="s">&#39;exit&#39;</span><span class="p">,(</span><span class="nx">code</span><span class="p">)</span><span class="o">=&gt;</span>
+      <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s">&#39;An error found, restarting the server...&#39;</span><span class="p">)</span>
+      <span class="nx">@ps</span><span class="p">.</span><span class="nx">kill</span><span class="p">()</span>
+      <span class="nx">@_run</span><span class="p">()</span>
+    <span class="p">)</span>
+    <span class="nx">callback</span><span class="o">?</span><span class="p">()</span>
+  <span class="nv">_setIgnoreFiles: </span><span class="nf">(newFiles) -&gt;</span>
+    <span class="vi">@ignoreFiles = </span><span class="nx">_</span><span class="p">(</span><span class="nx">@ignoreFiles</span><span class="p">).</span><span class="nx">union</span><span class="p">(</span><span class="nx">newFiles</span><span class="p">)</span>
+
+  <span class="nv">_isIgnore: </span><span class="nf">(file) -&gt;</span>
+    <span class="k">for</span> <span class="nx">v</span> <span class="k">in</span> <span class="nx">@ignoreFiles</span>
+      <span class="k">if</span> <span class="nx">minimatch</span><span class="p">(</span><span class="nx">file</span><span class="p">,</span> <span class="nx">v</span><span class="p">,</span> <span class="p">{</span><span class="nv">dot : </span><span class="kc">true</span><span class="p">})</span>
+        <span class="k">return</span> <span class="kc">true</span>
+    <span class="k">return</span> <span class="kc">false</span>
+
+</pre></div>             </td>           </tr>                </tbody>     </table>   </div> </body> </html> 

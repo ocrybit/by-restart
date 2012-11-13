@@ -1,0 +1,27 @@
+{
+  "name": "by-restart",
+  "version": "0.0.1",
+  "description": "A Bystander plugin to restart a server on file changes and runtime errors.",
+  "keywords": ["restart", "bystander", "server", "errors"],
+  "bugs": {
+    "url": "https://github.com/tomoio/by-restart/issues"
+  },
+  "main": "./lib/by-restart",
+  "directories": {
+    "lib": "./lib",
+    "doc": "./docs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tomoio/by-restart"
+  },
+  "dependencies": {
+      "underscore" : "",
+      "minimatch" : ""
+  },
+  "devDependencies": {
+    "coffee-script": "",
+    "mocha": "",
+    "chai": ""
+  }
+}
